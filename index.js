@@ -60,6 +60,11 @@ wsServer.on('request', request =>{
                 'color': color,
             });
 
+            //start game
+            if(game.clients.length === 3){ //Проверить ошибку
+                updateGameState();
+            }
+
             const payLoad = {
                 'method': 'join',
                 'game': game,
@@ -68,6 +73,27 @@ wsServer.on('request', request =>{
             game.clients.forEach(client => {
                 clients[client.clientId].connection.send(JSON.stringify(payLoad));
             });
+
+            // play
+            if(result.method === 'play'){
+                const clientId = result.clientId;
+                const gameId = result.gameId;
+                const ballId = result.ballId;
+
+                let state = games[gameId].state;
+                if(!state){
+                    state = {};
+                }
+
+                state[ballId] = color;
+                games[gameId].state = state;
+
+                const game = games[gameId];
+                const payLoad = {
+                    'method': 'play',
+                    'game': game,
+                }
+            }
 
         }
     });
@@ -85,6 +111,22 @@ wsServer.on('request', request =>{
     connection.send(JSON.stringify(payLoad));
 });
 
+function updateGameState(){
+
+    for(const g of Object.keys(games)){
+        const game = games[g];
+
+        const payLoad = {
+            'method': 'update',
+            'game': game
+        }
+        game.clients.forEach(c =>{
+            clients[c.clientId].connection.send(JSON.stringify(payLoad));
+        });
+    }
+
+    setTimeout(updateGameState, 500);
+}
 
 //code to create id from stack overflow
 function S4() {
