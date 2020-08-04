@@ -1,12 +1,17 @@
 const http = require("http");
 const app = require("express")();
+app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
+
 app.listen(9091, ()=> console.log("Listen on http port 9091"));
 
-app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
 // hashmap
 const clients = {};
 const games = {};
+
+//ws
 const websocketServer = require('websocket').server;
+
+//httpServer
 const httpServer = http.createServer();
 httpServer.listen(9090, ()=>{
     console.log("listen 9090");
@@ -61,7 +66,7 @@ wsServer.on('request', request =>{
             });
 
             //start game
-            if(game.clients.length === 3){ //Проверить ошибку
+            if(game.clients.length === 3){ 
                 updateGameState();
             }
 
@@ -73,30 +78,31 @@ wsServer.on('request', request =>{
             game.clients.forEach(client => {
                 clients[client.clientId].connection.send(JSON.stringify(payLoad));
             });
+        }
 
-            // play
-            if(result.method === 'play'){
-                const clientId = result.clientId;
-                const gameId = result.gameId;
-                const ballId = result.ballId;
+        // play
+        if(result.method === 'play'){
+            // const clientId = result.clientId;
+            const gameId = result.gameId;
+            const ballId = result.ballId;
+            const color = result.color;
+            let state = games[gameId].state;
 
-                let state = games[gameId].state;
-                if(!state){
-                    state = {};
-                }
-
-                state[ballId] = color;
-                games[gameId].state = state;
-
-                const game = games[gameId];
-                const payLoad = {
-                    'method': 'play',
-                    'game': game,
-                }
+            if(!state){
+                state = {};
             }
 
+            state[ballId] = color;
+            games[gameId].state = state;
+
+            // const game = games[gameId];
+            // const payLoad = {
+            //     'method': 'play',
+            //     'game': game,
+            // }
         }
     });
+
     const clientId = guid();
     clients[clientId] = {
         'connection': connection,
@@ -115,10 +121,9 @@ function updateGameState(){
 
     for(const g of Object.keys(games)){
         const game = games[g];
-
         const payLoad = {
             'method': 'update',
-            'game': game
+            'game': game,
         }
         game.clients.forEach(c =>{
             clients[c.clientId].connection.send(JSON.stringify(payLoad));

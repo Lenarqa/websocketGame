@@ -14,16 +14,17 @@
     <div id="boards"></div>
 
     <script>
-
-      let clientId = null;
-      let gameId = null;
-      let playerColor = null;
-      const ws = new WebSocket("ws://localhost:9090");
+      let ws = new WebSocket("ws://localhost:9090");
       const btnCreate = document.getElementById("btn-create");
       const btnJoin = document.getElementById("btn-join");
       const txtGameId = document.getElementById("txt-game-id");
       const divPlayers = document.getElementById("players");
       const divBoards = document.getElementById("boards");
+      
+      //players stats
+      let clientId = null;
+      let gameId = null;
+      let playerColor = null;
 
       // btns
       btnCreate.addEventListener("click", (e) => {
@@ -35,6 +36,7 @@
         ws.send(JSON.stringify(payLoad));
       });
 
+      //join 
       btnJoin.addEventListener("click", (e) => {
         if (gameId === null) {
           gameId = txtGameId.value;
@@ -49,6 +51,7 @@
         ws.send(JSON.stringify(payLoad));
       });
 
+      //ws methods
       ws.onmessage = (massage) => {
         const response = JSON.parse(massage.data);
         console.log(response);
@@ -72,14 +75,13 @@
 
         // update
         if (response.method === "update") {
-            
-            if(!response.game.state === null) return;
-            for(const b of Object.keys(response.game.state)){
-                // const ballId = response.game.state[b];
-                const color = response.game.state[b];
-                const ballObj = document.getElementById('ball' + ballId);
-                ballObj.style.backgroundColor = color;
-            }
+          if (!response.game.state) return;
+          for (const b of Object.keys(response.game.state)) {
+            // const ballId = response.game.state[b];
+            const color = response.game.state[b];
+            const ballObj = document.getElementById("ball" + b);
+            ballObj.style.backgroundColor = color;
+          }
         }
 
         // create join
@@ -98,8 +100,8 @@
             d.textContent = element.clientId;
             divPlayers.appendChild(d);
 
-            if(element.clientId === clientId){
-                playerColor = element.color;
+            if (element.clientId === clientId) {
+              playerColor = element.color;
             }
           });
 
@@ -108,27 +110,26 @@
           }
 
           for (let i = 0; i < game.balls; i++) {
-            
-            const b = document.createElement('button');
-            b.id = 'ball' + (i + 1);
+            const b = document.createElement("button");
+            b.id = "ball" + (i + 1);
             b.tag = i + 1;
             b.textContent = i + 1;
-            b.style.width = '150px';
-            b.style.height = '150px';
+            b.style.width = "150px";
+            b.style.height = "150px";
 
-            b.addEventListener('click', e =>{
-                b.style.background = playerColor;
-                const payLoad = {
-                    'method': 'play',
-                    'clientId': clientId,
-                    'gameId': gameId,
-                    'ballId': b.tag,
-                    'color': playerColor,
-                }
-                ws.send(JSON.stringify(payLoad));
-            })
+            b.addEventListener("click", e => {
+              b.style.background = playerColor;
+              const payLoad = {
+                method: "play",
+                clientId: clientId,
+                gameId: gameId,
+                ballId: b.tag,
+                color: playerColor,
+              }
+              ws.send(JSON.stringify(payLoad));
+            });
 
-            divBoards.appendChild(b);  
+            divBoards.appendChild(b);
           }
 
           console.log(
@@ -138,8 +139,6 @@
               response.game.balls
           );
         }
-
-
       };
     </script>
   </body>
